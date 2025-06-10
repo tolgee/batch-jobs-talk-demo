@@ -1,14 +1,16 @@
-package io.tolgee.jobs
+package io.tolgee.jobs.running
 
 import io.tolgee.jobs.entity.Job
+import io.tolgee.jobs.executeInNewTransaction
 import io.tolgee.jobs.service.JobExecutionService
 import io.tolgee.jobs.service.JobPersistenceService
-import io.tolgee.jobs.service.JobQueueService
 import io.tolgee.jobs.service.JobStartService
+import io.tolgee.jobs.service.queue.LocalJobQueue
 import io.tolgee.jobs.testutil.PostgresExtension
+import io.tolgee.jobs.testutil.RedisExtension
 import io.tolgee.jobs.util.UlidGenerator
 import jakarta.persistence.EntityManager
-import org.awaitility.Awaitility.await
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -26,16 +28,18 @@ import java.util.concurrent.TimeUnit
 @Testcontainers
 @SpringBootTest
 @ExtendWith(PostgresExtension::class)
-class JobsRunningTest {
+@ExtendWith(RedisExtension::class)
+class AbstractJobsRunningTest {
+  private val logger = LoggerFactory.getLogger(this::class.java)
+
   @Autowired
   private lateinit var transactionManager: PlatformTransactionManager
 
   @Autowired
-  private lateinit var jobQueueService: JobQueueService
+  private lateinit var jobQueueService: LocalJobQueue
 
   @Autowired
   private lateinit var jdbcTemplate: JdbcTemplate
-  private val logger = LoggerFactory.getLogger(this::class.java)
 
   @Autowired
   private lateinit var jobPersistenceService: JobPersistenceService
@@ -50,10 +54,12 @@ class JobsRunningTest {
   private lateinit var entityManager: EntityManager
 
   companion object {
+    @Suppress("unused")
     @DynamicPropertySource
     @JvmStatic
     fun setProperties(registry: DynamicPropertyRegistry) {
-      PostgresExtension.registerPgProps(registry)
+      PostgresExtension.Companion.registerPgProps(registry)
+      RedisExtension.Companion.registerPgProps(registry)
     }
   }
 
@@ -124,7 +130,7 @@ class JobsRunningTest {
   }
 
   fun waitFor(pollTimeInMs: Int = 100, timeoutInMs: Long = 10000, fn: () -> Boolean) =
-    await()
+    Awaitility.await()
       .pollDelay(pollTimeInMs.toLong(), TimeUnit.MILLISECONDS)
       .timeout(timeoutInMs, TimeUnit.MILLISECONDS)
       .until(fn)

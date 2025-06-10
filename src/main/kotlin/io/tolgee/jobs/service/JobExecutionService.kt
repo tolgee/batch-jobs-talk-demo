@@ -3,6 +3,7 @@ package io.tolgee.jobs.service
 import io.tolgee.jobs.entity.Job
 import io.tolgee.jobs.executeInNewTransaction
 import io.tolgee.jobs.properties.JobProperties
+import io.tolgee.jobs.service.queue.LocalJobQueue
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -13,8 +14,8 @@ import org.springframework.transaction.PlatformTransactionManager
 import java.lang.Thread.sleep
 
 @Service
-open class JobExecutionService(
-  private val queueService: JobQueueService,
+class JobExecutionService(
+  private val queueService: LocalJobQueue,
   private val jobPersistenceService: JobPersistenceService,
   private val transactionManager: PlatformTransactionManager,
   private val jobsProperties: JobProperties
@@ -56,7 +57,7 @@ open class JobExecutionService(
     return job
   }
 
-  open fun processJob(job: Job) {
+  fun processJob(job: Job) {
     // this is only educational implementation,
     // normally we would create a separate class per job type for complex handling
     when (job.jobType) {

@@ -4,7 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Component
 
 @Component
-@ConfigurationProperties(prefix = "tolgee.jobs")
+@ConfigurationProperties(prefix = "jobs")
 class JobProperties {
-  val perNodeConcurrency: Int = 1
+  var perNodeConcurrency: Int = 1
+  var useRedis: Boolean = false
 }
