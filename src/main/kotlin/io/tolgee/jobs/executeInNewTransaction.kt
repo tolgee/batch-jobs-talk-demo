@@ -9,6 +9,8 @@ fun <T> executeInNewTransaction(
   fn: (ts: TransactionStatus) -> T,
 ): T {
   val tt = TransactionTemplate(transactionManager)
+  tt.propagationBehavior = TransactionTemplate.PROPAGATION_REQUIRES_NEW
+  @Suppress("UNCHECKED_CAST")
   return tt.execute { ts ->
     fn(ts)
   } as T

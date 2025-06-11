@@ -5,7 +5,6 @@ import io.tolgee.jobs.repository.JobRepository
 import io.tolgee.jobs.util.UlidGenerator
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -37,27 +36,24 @@ class JobPersistenceService(
   }
 
   /**
-   * Attempts to retrieve a job by its ID and updates its status to RUNNING within a new transaction.
-   * This ensures that the job is locked for update, allowing safe processing in a concurrent environment.
+   * Attempts to retrieve and lock a pending job by its ID without changing its status.
+   * This ensures that the job is locked for the duration of the calling transaction.
    *
    * @param id The ID of the job to retrieve and lock
-   * @return The job with its status updated to RUNNING, or null if no job with the specified ID exists
+   * @return The locked job, or null if no job with the specified ID and PENDING status exists
    */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @Transactional
   fun getJobWithLocking(id: String): Job? {
     val job = entityManager.createNativeQuery(
-      """UPDATE job
-    SET status = 'RUNNING'
-    WHERE id = (
-      SELECT id
-      FROM   job
-      WHERE  status = 'PENDING'
-      ORDER  BY id
-      LIMIT  1
+      """
+      SELECT *
+      FROM job
+      WHERE id = :id AND status = 'PENDING'
       FOR UPDATE SKIP LOCKED
+    """, Job::class.java
     )
-    RETURNING *;""", Job::class.java
-    ).singleResult as Job
+      .setParameter("id", id)
+      .resultList.singleOrNull() as Job?
     return job
   }
 
@@ -65,14 +61,19 @@ class JobPersistenceService(
     return jobRepository.findById(id).orElseThrow { throw Exception("Job not found") }
   }
 
-  fun save(job: Job) {
-    jobRepository.save(job)
-  }
-
   fun setJobSuccessful(job: Job) {
     entityManager.createNativeQuery(
       """UPDATE job
          SET status = 'SUCCEEDED'
+         WHERE id = :jobId"""
+    ).setParameter("jobId", job.id)
+      .executeUpdate()
+  }
+
+  fun setJobFailed(job: Job) {
+    entityManager.createNativeQuery(
+      """UPDATE job
+         SET status = 'FAILED'
          WHERE id = :jobId"""
     ).setParameter("jobId", job.id)
       .executeUpdate()
