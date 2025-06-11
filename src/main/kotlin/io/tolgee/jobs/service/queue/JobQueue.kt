@@ -12,7 +12,7 @@ class JobQueue(
   }
 
   fun take(): String? {
-    return queue.poll()
+    return queue.take()
   }
 
   fun add(jobId: String) {
