@@ -54,7 +54,8 @@ class JobsErrorHandlingTest {
   @AfterEach
   fun afterEach() {
     executeInNewTransaction(transactionManager) {
-      @Suppress("SqlConstantExpression") entityManager.createNativeQuery("delete from job where 1 = 1").executeUpdate()
+      @Suppress("SqlConstantExpression")
+      entityManager.createNativeQuery("delete from job where 1 = 1").executeUpdate()
     }
   }
 
