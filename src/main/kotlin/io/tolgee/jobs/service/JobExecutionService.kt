@@ -4,7 +4,7 @@ import io.tolgee.jobs.entity.Job
 import io.tolgee.jobs.executeInNewTransaction
 import io.tolgee.jobs.properties.JobProperties
 import io.tolgee.jobs.service.jobProcessors.JobProcessor
-import io.tolgee.jobs.service.queue.LocalJobQueue
+import io.tolgee.jobs.service.queue.JobQueue
 import io.tolgee.jobs.util.SavePointManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager
 
 @Service
 class JobExecutionService(
-  private val queueService: LocalJobQueue,
+  private val queueService: JobQueue,
   private val jobPersistenceService: JobPersistenceService,
   private val transactionManager: PlatformTransactionManager,
   private val jobsProperties: JobProperties,

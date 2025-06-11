@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
 
 @Component
-class LocalJobQueue(
+class JobQueue(
   private val queueProvider: QueueProvider
 ) {
   private val queue: BlockingQueue<String> by lazy {

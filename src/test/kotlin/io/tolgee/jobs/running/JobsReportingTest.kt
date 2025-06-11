@@ -6,7 +6,7 @@ import io.tolgee.jobs.executeInNewTransaction
 import io.tolgee.jobs.service.JobExecutionService
 import io.tolgee.jobs.service.JobPersistenceService
 import io.tolgee.jobs.service.jobProcessors.JobProcessor
-import io.tolgee.jobs.service.queue.LocalJobQueue
+import io.tolgee.jobs.service.queue.JobQueue
 import io.tolgee.jobs.testutil.PostgresExtension
 import io.tolgee.jobs.testutil.RedisExtension
 import jakarta.persistence.EntityManager
@@ -35,7 +35,7 @@ class JobsReportingTest {
   private lateinit var transactionManager: PlatformTransactionManager
 
   @Autowired
-  private lateinit var jobQueueService: LocalJobQueue
+  private lateinit var jobQueueService: JobQueue
 
   @Autowired
   private lateinit var jobPersistenceService: JobPersistenceService

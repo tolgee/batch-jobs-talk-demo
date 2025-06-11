@@ -5,7 +5,7 @@ import io.tolgee.jobs.executeInNewTransaction
 import io.tolgee.jobs.service.JobExecutionService
 import io.tolgee.jobs.service.JobPersistenceService
 import io.tolgee.jobs.service.JobStartService
-import io.tolgee.jobs.service.queue.LocalJobQueue
+import io.tolgee.jobs.service.queue.JobQueue
 import io.tolgee.jobs.testutil.PostgresExtension
 import io.tolgee.jobs.testutil.RedisExtension
 import io.tolgee.jobs.util.UlidGenerator
@@ -35,7 +35,7 @@ abstract class AbstractJobsRunningTest {
   private lateinit var transactionManager: PlatformTransactionManager
 
   @Autowired
-  private lateinit var jobQueueService: LocalJobQueue
+  private lateinit var jobQueueService: JobQueue
 
   @Autowired
   private lateinit var jdbcTemplate: JdbcTemplate
