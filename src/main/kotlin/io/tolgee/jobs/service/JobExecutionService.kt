@@ -16,7 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager
 
 @Service
 class JobExecutionService(
-  private val queueService: JobQueue,
+  private val jobQueue: JobQueue,
   private val jobPersistenceService: JobPersistenceService,
   private val transactionManager: PlatformTransactionManager,
   private val jobsProperties: JobProperties,
@@ -29,9 +29,9 @@ class JobExecutionService(
   private var run = true
 
   @OptIn(DelicateCoroutinesApi::class)
-  fun run(concurrency: Int = jobsProperties.perNodeConcurrency) = GlobalScope.launch {
+  fun run(concurrency: Int = jobsProperties.perNodeConcurrency): kotlinx.coroutines.Job {
     run = true
-    GlobalScope.launch {
+    return GlobalScope.launch {
       repeat(concurrency) { workerId ->
         launch(Dispatchers.IO) {
           logger.info("Starting worker thread #$workerId")
@@ -48,27 +48,31 @@ class JobExecutionService(
   }
 
   private fun processNextJob() {
-    val job = getNextJob() ?: return
+    // Get the next job ID from the queue, return if none available
+    val nextJobId = jobQueue.take() ?: return
     executeInNewTransaction(transactionManager) {
+      // Try to lock and retrieve the job, return if not found or already locked
+      val job = jobPersistenceService.getJobWithLocking(nextJobId) ?: return@executeInNewTransaction
+      // Create a savepoint to allow rollback if job fails
       val savePoint = savePointManager.setSavepoint()
+      // Report that job execution has started
       jobStatusReporter.reportJobRunning(job)
       try {
+        // Execute the job using appropriate processor
         processJob(job)
+        // Report and persist successful job completion
         jobStatusReporter.reportJobSuccessful(job)
         jobPersistenceService.setJobSuccessful(job)
       } catch (e: Exception) {
+        // Log error and report job failure
         logger.error("Job ${job.id} failed", e)
+        // Roll back to savepoint to undo any partial changes
         savePointManager.rollbackSavepoint(savePoint)
+        // Update job status to failed
         jobPersistenceService.setJobFailed(job)
         jobStatusReporter.reportJobFailed(job)
       }
     }
-  }
-
-  private fun getNextJob(): Job? {
-    val id = queueService.take() ?: return null
-    val job = jobPersistenceService.getJobWithLocking(id)
-    return job
   }
 
   private fun processJob(job: Job) {

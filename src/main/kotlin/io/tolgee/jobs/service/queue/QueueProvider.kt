@@ -1,6 +1,7 @@
 package io.tolgee.jobs.service.queue
 
 import io.tolgee.jobs.properties.JobProperties
+import org.redisson.api.RedissonClient
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.util.concurrent.BlockingQueue
@@ -23,6 +24,6 @@ class QueueProvider(
   }
 
   private val redissonClient by lazy {
-    applicationContext.getBean(org.redisson.api.RedissonClient::class.java)
+    applicationContext.getBean(RedissonClient::class.java)
   }
 }
